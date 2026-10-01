@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에듀테크 전문가 프로필</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #0b0f19;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* 캔버스 배경 고정 */
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* 카드 및 버튼 입체 떠오름 효과 */
+        .card-rise {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .card-rise:hover, .card-rise:active {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 12px 25px -5px rgba(59, 130, 246, 0.4);
+        }
+
+        /* 커스텀 스크롤바 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 8px;
+        }
+
+        /* 페이드 인 애니메이션 */
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="relative min-h-screen flex flex-col justify-between select-none">
+
+    <!-- 별무리 배경 캔버스 -->
+    <canvas id="starfield"></canvas>
+
+    <!-- 배경음악 오디오 요소를 index.html과 동일한 폴더의 음원으로 지정 -->
+    <audio id="bgm" preload="auto"></audio>
+
+    <!-- 플로팅 음향 컨트롤 패널 (메인 진입 후 상단 고정) -->
+    <div id="audio-control-panel" class="hidden fixed top-5 right-5 z-50 flex items-center gap-2 bg-slate-800/90 border border-slate-700/80 p-1.5 px-3 rounded-full backdrop-blur-md shadow-lg">
+        <button onclick="toggleAudio()" class="text-blue-400 hover:text-blue-300 p-1.5 transition-transform hover:scale-110 focus:outline-none" title="재생/일시정지">
+            <i id="audio-icon" class="fas fa-volume-up text-base"></i>
+        </button>
+        <span id="bgm-title" class="text-xs text-slate-300 font-medium max-w-[90px] truncate">BGM 1</span>
+        <button onclick="nextAudio()" class="text-slate-400 hover:text-white p-1.5 transition-transform hover:scale-110 focus:outline-none" title="다음 곡">
+            <i class="fas fa-step-forward text-xs"></i>
+        </button>
+    </div>
+
+    <!-- [1페이지: 랜딩 화면] -->
+    <section id="landing-page" class="relative z-10 min-h-screen flex flex-col justify-center items-center text-center px-4">
+        <div class="max-w-2xl space-y-8 fade-in">
+            <div class="inline-block px-4 py-1.5 bg-blue-900/40 border border-blue-500/30 rounded-full text-blue-300 text-xs sm:text-sm font-semibold tracking-wide backdrop-blur-sm">
+                EDUTECH SPECIALIST
+            </div>
+            
+            <!-- 타이틀 문구 (2열 가운데 정렬) -->
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold leading-relaxed tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-indigo-200 to-purple-300 break-keep text-center">
+                기술로 교육의 미래를 열고,<br>
+                배움의 무한한 가능성을 연결합니다
+            </h1>
+
+            <!-- 부가 설명 문구 -->
+            <p class="text-slate-400 text-xs sm:text-sm md:text-base max-w-xl mx-auto font-light leading-relaxed break-keep">
+                디지털 도구와 창의적 수업 설계로 학생 중심의 교육 혁신을 이끌어 갑니다.
+            </p>
+
+            <!-- 입장하기 버튼 -->
+            <div class="pt-4">
+                <button onclick="enterApp()" class="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base sm:text-lg rounded-2xl shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95 flex items-center justify-center space-x-3 mx-auto">
+                    <span>프로필 입장하기</span>
+                    <i class="fas fa-arrow-right text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- [2페이지: 메인 프로필 화면] -->
+    <main id="main-app" class="hidden relative z-10 max-w-4xl mx-auto px-4 py-12 space-y-12 fade-in">
+        
+        <!-- 프로필 카드 헤더 -->
+        <section class="flex flex-col sm:flex-row items-center gap-8 bg-slate-900/70 p-8 rounded-3xl border border-slate-800 backdrop-blur-md shadow-2xl">
+            <div class="relative shrink-0">
+                <div class="w-36 h-36 sm:w-40 sm:h-40 rounded-2xl overflow-hidden border-2 border-blue-500/40 shadow-xl">
+                    <!-- 동일 폴더의 profile.jpg 사용 (없을 경우 고화질 프로필 이미지 자동 대체) -->
+                    <img src="profile.jpg" alt="프로필 사진" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400&auto=format&fit=crop';">
+                </div>
+            </div>
+            
+            <div class="text-center sm:text-left space-y-3 flex-1">
+                <div class="inline-block px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 rounded-lg text-indigo-400 text-xs font-semibold">
+                    에듀테크 전문가
+                </div>
+                <h2 class="text-3xl font-bold tracking-tight text-white">김유미</h2>
+                <p class="text-blue-400 font-medium text-sm sm:text-base">미래교육 & 디지털 학습 디자이너</p>
+                
+                <div class="pt-3 text-slate-300 text-xs sm:text-sm space-y-1.5 border-t border-slate-800">
+                    <p class="flex items-center justify-center sm:justify-start gap-2">
+                        <i class="fas fa-check-circle text-blue-400 text-xs"></i>
+                        <span>스마트 교육 및 에듀테크 도구 활용 수업</span>
+                    </p>
+                    <p class="flex items-center justify-center sm:justify-start gap-2">
+                        <i class="fas fa-check-circle text-blue-400 text-xs"></i>
+                        <span>구글 워크스페이스 / AI 기반 맞춤형 학습 연구</span>
+                    </p>
+                    <p class="flex items-center justify-center sm:justify-start gap-2">
+                        <i class="fas fa-check-circle text-blue-400 text-xs"></i>
+                        <span>디지털 역량 강화 수업</span>
+                    </p>
+                </div>
+
+                <!-- 오픈채팅방 연결 버튼 -->
+                <div class="pt-3 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <a href="https://open.kakao.com/o/gml0RALi" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2.5 px-4 py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 font-semibold rounded-xl text-xs sm:text-sm transition-all transform hover:scale-105 shadow-md shadow-yellow-500/5">
+                        <i class="fas fa-comment text-yellow-400 text-base"></i>
+                        <span>카카오톡 오픈채팅 참여하기</span>
+                        <span class="bg-yellow-500/20 text-yellow-200 text-[11px] px-2 py-0.5 rounded-md border border-yellow-500/30 font-normal">참여코드: ty93290</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 핵심 역량 요약 -->
+        <section class="space-y-4">
+            <h3 class="text-lg sm:text-xl font-bold tracking-wide text-slate-200 border-l-4 border-cyan-500 pl-3">
+                핵심 역량 요약
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl backdrop-blur-md space-y-2 hover:border-cyan-500/40 transition-colors">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
+                            <i class="fas fa-laptop-code text-base"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-100 text-sm">10년+ 현장 전문성</h4>
+                    </div>
+                    <p class="text-xs text-slate-300 font-light leading-relaxed pt-1">
+                        초등부터 고등까지 연령별 맞춤형 코딩 및 AI 리터러시 커리큘럼 설계 및 운영
+                    </p>
+                </div>
+
+                <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl backdrop-blur-md space-y-2 hover:border-purple-500/40 transition-colors">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
+                            <i class="fas fa-brain text-base"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-100 text-sm">실습 중심 AI 수업 설계</h4>
+                    </div>
+                    <p class="text-xs text-slate-300 font-light leading-relaxed pt-1">
+                        단순 이론을 넘어 실생활 문제 해결형 생성형 AI 및 디지털 도구 활용 교육 전개
+                    </p>
+                </div>
+
+                <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl backdrop-blur-md space-y-2 hover:border-blue-500/40 transition-colors">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+                            <i class="fas fa-sliders-h text-base"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-100 text-sm">맞춤형 환경 구축/운영</h4>
+                    </div>
+                    <p class="text-xs text-slate-300 font-light leading-relaxed pt-1">
+                        대규모 학생 계정 구축 및 수업 환경 최적화를 포함한 리터러시 교육 전담
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 주요 경력사항 -->
+        <section class="space-y-4">
+            <h3 class="text-lg sm:text-xl font-bold tracking-wide text-slate-200 border-l-4 border-indigo-500 pl-3">
+                주요 경력사항
+            </h3>
+
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 sm:p-6 backdrop-blur-md space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800/80 gap-1 sm:gap-4">
+                    <span class="text-xs font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full w-fit">2015 - 현재</span>
+                    <span class="text-xs sm:text-sm font-semibold text-slate-200">초·중·고 코딩·OA / AI·디지털 교육 전문 강사</span>
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800/80 gap-1 sm:gap-4">
+                    <span class="text-xs font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full w-fit">2025 - 2026</span>
+                    <span class="text-xs sm:text-sm font-semibold text-slate-200">중/고등학교 디지털튜터 및 AI 리터러시 전문 지도</span>
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4">
+                    <span class="text-xs font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full w-fit">2023 - 2024</span>
+                    <span class="text-xs sm:text-sm font-semibold text-slate-200">시교육청 주관 관내 초등학교 SW 실습 과정 운영</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 학생 참여 프로그램 & 소통 채널 -->
+        <section class="space-y-4">
+            <h3 class="text-lg sm:text-xl font-bold tracking-wide text-slate-200 border-l-4 border-blue-500 pl-3">
+                학생 참여 프로그램 & 플랫폼
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- 구글 마이맵 모달 버튼 -->
+                <div onclick="openCreatorModal()" class="card-rise cursor-pointer bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 p-5 rounded-2xl flex flex-col items-center text-center space-y-3 group backdrop-blur-sm">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-map-marked-alt text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200 text-sm">구글 마이맵</span>
+                    <button class="w-full py-1.5 bg-slate-800 group-hover:bg-emerald-600 text-slate-300 group-hover:text-white rounded-xl text-xs font-medium transition-colors">
+                        명단 & 링크 확인
+                    </button>
+                </div>
+
+                <!-- 구글 사이트 -->
+                <a href="https://script.google.com/macros/s/AKfycbzrZa9eDfNKtNrUh8Ylm4SCluaxnRTs7aFmzmq-WBspUjew4P0qc16dGvpZ2Va_CiB1/exec" target="_blank" rel="noopener noreferrer" class="card-rise bg-slate-900/80 border border-slate-800 hover:border-purple-500/50 p-5 rounded-2xl flex flex-col items-center text-center space-y-3 group backdrop-blur-sm">
+                    <div class="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-globe text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200 text-sm">구글 사이트</span>
+                    <button class="w-full py-1.5 bg-slate-800 group-hover:bg-purple-600 text-slate-300 group-hover:text-white rounded-xl text-xs font-medium transition-colors">
+                        바로가기
+                    </button>
+                </a>
+
+                <!-- 프로젝트_1 -->
+                <a href="https://our-music-2926.netlify.app/" target="_blank" rel="noopener noreferrer" class="card-rise bg-slate-900/80 border border-slate-800 hover:border-amber-500/50 p-5 rounded-2xl flex flex-col items-center text-center space-y-3 group backdrop-blur-sm">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-music text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200 text-sm">프로젝트_1</span>
+                    <button class="w-full py-1.5 bg-slate-800 group-hover:bg-amber-600 text-slate-300 group-hover:text-white rounded-xl text-xs font-medium transition-colors">
+                        바로가기
+                    </button>
+                </a>
+
+                <!-- 프로젝트_2 -->
+                <a href="#" onclick="alert('준비 중인 프로젝트입니다.'); return false;" class="card-rise bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 p-5 rounded-2xl flex flex-col items-center text-center space-y-3 group backdrop-blur-sm">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-cubes text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200 text-sm">프로젝트_2</span>
+                    <button class="w-full py-1.5 bg-slate-800 group-hover:bg-cyan-600 text-slate-300 group-hover:text-white rounded-xl text-xs font-medium transition-colors">
+                        바로가기
+                    </button>
+                </a>
+            </div>
+        </section>
+
+        <!-- 푸터 -->
+        <footer class="text-center text-slate-500 text-xs py-6 border-t border-slate-800/60">
+            © 2026 EdTech Specialist Profile. All rights reserved.
+        </footer>
+    </main>
+
+    <!-- 구글 마이맵 참여 학생 목록 모달 -->
+    <div id="creator-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-2xl w-full space-y-5 text-center shadow-2xl transform transition-all fade-in max-h-[90vh] flex flex-col">
+            
+            <!-- 헤더 -->
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4 shrink-0">
+                <div class="text-left">
+                    <span class="text-xs font-semibold text-emerald-400 block">구글 마이맵 프로젝트</span>
+                    <h4 class="text-lg font-bold text-white">지도 핀 제작 참여 학생 목록</h4>
+                </div>
+                <button onclick="closeCreatorModal()" class="text-slate-400 hover:text-white p-2 text-lg">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- 상단 구글 마이맵 전체 열기 버튼 -->
+            <div class="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-4 text-left flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+                <div class="text-xs text-emerald-200">
+                    <p class="font-bold mb-0.5">📍 구글 마이맵 프로젝트 지도 보기</p>
+                    <p class="text-slate-300">학생들이 직접 탐구하고 만든 지점을 구글 지도에서 확인하세요.</p>
+                </div>
+                <a href="https://www.google.com/maps/d/u/0/viewer?mid=1Ue5ywALF-E57uX-aYq4G8gX3pxxc8Vk&ll=34.87183509620534%2C128.384809139148&z=12" target="_blank" rel="noopener noreferrer" class="shrink-0 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-transform transform hover:scale-105 flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <span>구글 마이맵 전체 열기</span>
+                    <i class="fas fa-external-link-alt text-xs"></i>
+                </a>
+            </div>
+
+            <!-- 학생 목록 -->
+            <div class="overflow-y-auto pr-1 flex-1 max-h-[45vh] custom-scrollbar">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-center">
+                    
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">제승당</span>
+                        <p class="text-slate-100 font-bold text-xs">조해준 <span class="text-slate-400 font-normal text-[10px]">(10327)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">당포성지</span>
+                        <p class="text-slate-100 font-bold text-xs">백인호 <span class="text-slate-400 font-normal text-[10px]">(10312)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">동포루</span>
+                        <p class="text-slate-100 font-bold text-xs">임세호 <span class="text-slate-400 font-normal text-[10px]">(10322)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">충렬사</span>
+                        <p class="text-slate-100 font-bold text-xs">조해준 <span class="text-slate-400 font-normal text-[10px]">(10327)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">북포루</span>
+                        <p class="text-slate-100 font-bold text-xs">임선윤 <span class="text-slate-400 font-normal text-[10px]">(10321)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">서포루</span>
+                        <p class="text-slate-100 font-bold text-xs">김승민 <span class="text-slate-400 font-normal text-[10px]">(10306)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">해저터널</span>
+                        <p class="text-slate-100 font-bold text-xs">권태경 <span class="text-slate-400 font-normal text-[10px]">(107)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">해저터널</span>
+                        <p class="text-slate-100 font-bold text-xs">이정후 <span class="text-slate-400 font-normal text-[10px]">(102)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">동피랑벽화마을</span>
+                        <p class="text-slate-100 font-bold text-xs">정진혁 <span class="text-slate-400 font-normal text-[10px]">(105)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">동피랑벽화마을</span>
+                        <p class="text-slate-100 font-bold text-xs">김우현 <span class="text-slate-400 font-normal text-[10px]">(107)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">디피랑</span>
+                        <p class="text-slate-100 font-bold text-xs">조민준 <span class="text-slate-400 font-normal text-[10px]">(105)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">디피랑</span>
+                        <p class="text-slate-100 font-bold text-xs">장기윤 <span class="text-slate-400 font-normal text-[10px]">(107)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">이순신공원</span>
+                        <p class="text-slate-100 font-bold text-xs">김태완 <span class="text-slate-400 font-normal text-[10px]">(106)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">봉숫골벚꽃축제</span>
+                        <p class="text-slate-100 font-bold text-xs">정태균 <span class="text-slate-400 font-normal text-[10px]">(105)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">강구안</span>
+                        <p class="text-slate-100 font-bold text-xs">김우현 <span class="text-slate-400 font-normal text-[10px]">(107)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">강구안</span>
+                        <p class="text-slate-100 font-bold text-xs">김현빈 <span class="text-slate-400 font-normal text-[10px]">(107)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">서피랑</span>
+                        <p class="text-slate-100 font-bold text-xs">하성균 <span class="text-slate-400 font-normal text-[10px]">(107)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">윤이상기념공원</span>
+                        <p class="text-slate-100 font-bold text-xs">정태균 <span class="text-slate-400 font-normal text-[10px]">(105)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">박경리기념관</span>
+                        <p class="text-slate-100 font-bold text-xs">허시우 <span class="text-slate-400 font-normal text-[10px]">(106)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">세자트라숲</span>
+                        <p class="text-slate-100 font-bold text-xs">김예성 <span class="text-slate-400 font-normal text-[10px]">(103)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">장사도</span>
+                        <p class="text-slate-100 font-bold text-xs">강은찬 <span class="text-slate-400 font-normal text-[10px]">(103)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">욕지도</span>
+                        <p class="text-slate-100 font-bold text-xs">강영서 <span class="text-slate-400 font-normal text-[10px]">(103)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">사량도</span>
+                        <p class="text-slate-100 font-bold text-xs">강영서 <span class="text-slate-400 font-normal text-[10px]">(103)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">연화도</span>
+                        <p class="text-slate-100 font-bold text-xs">강영서 <span class="text-slate-400 font-normal text-[10px]">(103)</span></p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-emerald-400 text-[11px] font-semibold mb-0.5 truncate max-w-full">소매물도</span>
+                        <p class="text-slate-100 font-bold text-xs">강영서 <span class="text-slate-400 font-normal text-[10px]">(103)</span></p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 닫기 버튼 -->
+            <div class="pt-2 shrink-0">
+                <button onclick="closeCreatorModal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. 별무리 애니메이션 (Starfield Canvas)
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function initStars() {
+            stars = [];
+            const count = Math.floor((canvas.width * canvas.height) / 2800);
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    speed: Math.random() * 0.7 + 0.2,
+                    opacity: Math.random() * 0.8 + 0.2
+                });
+            }
+        }
+
+        function animateStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                ctx.fill();
+
+                star.y += star.speed;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            });
+
+            requestAnimationFrame(animateStars);
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            initStars();
+        });
+
+        // 2. 배경음악 플레이리스트 제어 (동일 폴더 bgm1.mp3, bgm2.mp3, bgm3.mp3)
+        const bgmList = ['bgm1.mp3', 'bgm2.mp3', 'bgm3.mp3'];
+        let currentTrackIndex = 0;
+        const audio = document.getElementById('bgm');
+        const audioPanel = document.getElementById('audio-control-panel');
+        const audioIcon = document.getElementById('audio-icon');
+        const bgmTitle = document.getElementById('bgm-title');
+        let isPlaying = false;
+
+        function loadTrack(index) {
+            audio.src = bgmList[index];
+            bgmTitle.innerText = `BGM ${index + 1}`;
+        }
+
+        function playAudio() {
+            if (!audio.src || audio.src === "" || audio.src.endsWith("/")) {
+                loadTrack(currentTrackIndex);
+            }
+            audio.play().then(() => {
+                isPlaying = true;
+                audioIcon.className = "fas fa-volume-up text-blue-400 text-base";
+            }).catch(err => {
+                console.log("Audio playback waiting for user action:", err);
+                isPlaying = false;
+                audioIcon.className = "fas fa-volume-mute text-slate-500 text-base";
+            });
+        }
+
+        function toggleAudio() {
+            if (isPlaying) {
+                audio.pause();
+                isPlaying = false;
+                audioIcon.className = "fas fa-volume-mute text-slate-400 text-base";
+            } else {
+                playAudio();
+            }
+        }
+
+        function nextAudio() {
+            currentTrackIndex = (currentTrackIndex + 1) % bgmList.length;
+            loadTrack(currentTrackIndex);
+            playAudio();
+        }
+
+        // 트랙이 종료되면 자동으로 다음 곡 연속 재생
+        audio.addEventListener('ended', () => {
+            nextAudio();
+        });
+
+        // 3. 메인 화면 전환 및 오디오 시작
+        function enterApp() {
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            audioPanel.classList.remove('hidden');
+            
+            loadTrack(currentTrackIndex);
+            playAudio();
+            window.scrollTo(0, 0);
+        }
+
+        // 4. 구글 마이맵 제작자 모달
+        function openCreatorModal() {
+            document.getElementById('creator-modal').classList.remove('hidden');
+        }
+
+        function closeCreatorModal() {
+            document.getElementById('creator-modal').classList.add('hidden');
+        }
+
+        window.onload = function() {
+            resizeCanvas();
+            initStars();
+            animateStars();
+        };
+    </script>
+</body>
+</html>
